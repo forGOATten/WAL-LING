@@ -39,11 +39,10 @@ import numpy as np
 # pl = [[p[0] for p in payload], [p[1] if payload.index(p)%2 else -p[1] for p in payload], [p[2] for p in payload]]
 # with open('TLE_data.json', 'w') as file:
 #     file.write(json.)
-
-PAYLOADSIZE = 10
-DEBRISSIZE = 100
-
 np.random.seed(datetime.now().second)
+PAYLOADSIZE = 3
+DEBRISSIZE = np.random.randint(60,100)
+
 payload = [[a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
            [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
            [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)]]
@@ -52,16 +51,19 @@ debris = [[a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZ
           [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)]]
 ss = [0,0,0]
 
+fig = plt.figure(figsize=(10, 10))
+ax = fig.subplots(subplot_kw={"projection": "3d"})
 
-fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-
-ax.scatter(debris[0], debris[1], debris[2])
+ax.scatter(debris[0], debris[1], debris[2],
+           label="Debris")
 ax.scatter(payload[0], payload[1], payload[2], 
            marker="p",
-           linewidths=3)
+           linewidths=3,
+           label="Payload")
 ax.scatter([0],[0],[0],
            marker="P",
-           linewidths=5)
+           linewidths=10,
+           label="Space Station")
 
 ax.set(xticklabels=[],
        yticklabels=[],
