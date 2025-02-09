@@ -7,6 +7,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
 
+MAXDEBRIS = 250
+MAXPAYLOADS = 10
+
 def UI_place_on_Grid(parent: ttk.Frame, layout: list, spadx:tuple=None):
     '''
     Some Overly Engineered Grid Placement
@@ -78,18 +81,21 @@ class RootWindow(ttk.Window):
             "cargoMax": 0,
             "fuel": 0,
             "fuelMax": 0,
+            "stationCoor": (0,0,0),
             "initial": {
                 "nSpaceStations": 0,
                 "nDebris": 0,
-                "nPayload": 0
+                "nPayloads": 0
             },
             "current": {
                 "nSpaceStations": 0,
                 "nDebris": 0,
-                "nPayload": 0
+                "nPayloads": 0
             }
         }
-
+        self.set_MaxCapacity(100)
+        self.set_MaxVolume(100)
+        self.after(0, self.__regen)
         centerUIWindows(self)
 
     def create_Figure(self, master):
@@ -98,11 +104,6 @@ class RootWindow(ttk.Window):
         # adding the subplot 
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
-        self.ax.set(xticklabels=[], yticklabels=[], zticklabels=[])
-        self.ax.grid(False)
-        self.ax.xaxis.pane.fill = False
-        self.ax.yaxis.pane.fill = False
-        self.ax.zaxis.pane.fill = False
         # creating the Tkinter canvas 
         # containing the Matplotlib figure 
         self.canvas = FigureCanvasTkAgg(self.fig, master)   
@@ -139,27 +140,38 @@ class RootWindow(ttk.Window):
 
     def __regen(self):
         self.after(0, self.ax.clear)
-        PAYLOADSIZE = 3
-        DEBRISSIZE = np.random.randint(60, 100)
-        payload = [
-            [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
-            [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
-            [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)]
+        self.set_NDebris(np.random.randint(60, MAXDEBRIS)+1)
+        self.set_NPayload(np.random.randint(3, MAXPAYLOADS))
+        self.set_NStations(1)
+
+        self.set_CargoValue(0)
+        self.set_FuelValue(100)
+
+        self.payloadArr = [
+            [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nPayloads"])], 
+            [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nPayloads"])], 
+            [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nPayloads"])]
         ]
-        debris = [
-            [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
-            [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
-            [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)]
+        self.debrisArr = [
+            [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nDebris"]-1)], 
+            [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nDebris"]-1)], 
+            [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nDebris"]-1)]
         ]
-        self.add_scatter(payload[0], payload[1], payload[2], 
+        for i in range(len(self.debrisArr)):
+            self.debrisArr[i].insert(0,0)
+        
+        self.add_scatter(self.payloadArr[0], self.payloadArr[1], self.payloadArr[2], 
             marker="p",
             linewidths=3,
+            c = "#ffa620",
             label="Payload")
         self.add_scatter([0], [0], [0],
             marker="P",
             linewidths=10,
+            c = "#00b976",
             label="Space Station")
-        self.add_scatter(debris[0], debris[1], debris[2],
+        self.add_scatter(self.debrisArr[0], self.debrisArr[1], self.debrisArr[2],
+            c = "#da524e",
             label="Debris")
         self.after(0, self.fig.legend)
 
@@ -246,10 +258,10 @@ class RootWindow(ttk.Window):
         
         statToolsFrame = ttk.Frame(statFrame)
         statToolsFrame.grid(column=1, row=2, sticky=tk.NSEW)
-        self.debrisBar = ttk.Progressbar(statToolsFrame, style="success", value=40)
+        self.debrisBar = ttk.Progressbar(statToolsFrame, style="danger", value=40)
         statButtonFrame = ttk.Frame(statToolsFrame)
 
-        statToolsLayout = [[ttk.Label(statToolsFrame, text="Debris Cleared:"), ttk.Label(statToolsFrame, textvariable=self.NDebrisValue)],
+        statToolsLayout = [[ttk.Label(statToolsFrame, text="Debris Remaining:"), ttk.Label(statToolsFrame, textvariable=self.NDebrisValue)],
                            [self.debrisBar],
                            [statButtonFrame]
                         ]
@@ -297,7 +309,7 @@ class RootWindow(ttk.Window):
         """
         self.parameters["cargoMax"] = value
         if self.parameters["cargoMax"] >= self.parameters["cargo"]:
-            self.after(0, self.cargoMeter.amountusedvar.set, int(self.parameters["cargo"]/self.parameters["cargoMax"]))
+            self.after(0, self.cargoMeter.amountusedvar.set, int(self.parameters["cargo"]/self.parameters["cargoMax"] * 100))
             self.after(0, self.cargoValue.set, str(int(self.parameters['cargo'])))
 
     def set_CargoValue(self, value: int | float):
@@ -306,7 +318,7 @@ class RootWindow(ttk.Window):
         """
         self.parameters["cargo"] = value
         if self.parameters["cargoMax"] >= self.parameters["cargo"]:
-            self.after(0, self.cargoMeter.amountusedvar.set, int(self.parameters["cargo"]/self.parameters["cargoMax"]))
+            self.after(0, self.cargoMeter.amountusedvar.set, int(self.parameters["cargo"]/self.parameters["cargoMax"] * 100))
             self.after(0, self.cargoValue.set, str(int(self.parameters['cargo'])))
 
     def set_MaxVolume(self, value: int | float):
@@ -315,7 +327,7 @@ class RootWindow(ttk.Window):
         """
         self.parameters["fuelMax"] = value
         if self.parameters["fuelMax"] >= self.parameters["fuel"]:
-            self.after(0, self.fuelMeter.amountusedvar.set, int(self.parameters["fuel"]/self.parameters["fuelMax"]))
+            self.after(0, self.fuelMeter.amountusedvar.set, int(self.parameters["fuel"]/self.parameters["fuelMax"] * 100))
             self.after(0, self.fuelValue.set, str(int(self.parameters['fuel'])))
 
     def set_FuelValue(self, value: int | float):
@@ -324,7 +336,7 @@ class RootWindow(ttk.Window):
         """
         self.parameters["fuel"] = value
         if self.parameters["fuelMax"] >= self.parameters["fuel"]:
-            self.after(0, self.fuelMeter.amountusedvar.set, int(self.parameters["fuel"]/self.parameters["fuelMax"]))
+            self.after(0, self.fuelMeter.amountusedvar.set, int(self.parameters["fuel"]/self.parameters["fuelMax"] * 100))
             self.after(0, self.fuelValue.set, str(int(self.parameters['fuel'])))
 
     def set_NStations(self, value: int):
@@ -372,5 +384,3 @@ if __name__ == "__main__":
     np.random.seed(datetime.now().second)
     root = RootWindow()
     root.mainloop()
-
-    
