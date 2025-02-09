@@ -12,6 +12,10 @@ import animationTest as anim  # Imports the animate_point function
 # (Optional TLE data processing code is commented out)
 # -----------------------------------------------------------------
 
+#SPACE STATION COORDINATES
+depot = (0,0,0)
+
+
 np.random.seed(datetime.now().second)
 PAYLOADSIZE = 3
 DEBRISSIZE = np.random.randint(60, 100)
@@ -23,6 +27,8 @@ debris = [[a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZ
           [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
           [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)]]
 
+for i in range(len(debris)):
+       debris[i].insert(0, depot[i])
 
 #Roberts thingies -----------------------------------------------------------------------------------
 #We are gonna take 4 params :
@@ -32,14 +38,12 @@ debris = [[a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZ
 3- weights => [int, ..., int]
 4- capacity cap => int
 """
-#Point init
-depot = (0,0,0)
 #Calcul des poids => nb als ...
 weight_debris = [np.random.randint(1, 10) for a in range(len(debris[0]))]
 #capacity_cap = int(statistics.mean(weight_debris))
 capacity_cap = len(debris[0])
 
-optimized_routes = data2.clarke_wright_savings(debris, weight_debris, capacity_cap, payload)
+optimized_routes = data.clarke_wright_savings(debris, weight_debris, capacity_cap, payload)
 
 # Vérification de la traversée
 print("Trajets optimisés :")
@@ -97,13 +101,24 @@ ax.yaxis.pane.fill = False
 ax.zaxis.pane.fill = False
 
 
-debris_coords = [[debris[0][i], debris[1][i], debris[2][i]]for i in range(DEBRISSIZE)]
-waypoints = [depot] + debris_coords
+#debris_coords = [[debris[0][i], debris[1][i], debris[2][i]]for i in range(DEBRISSIZE)]
+#waypoints = [depot] + debris_coords
+
+# Lolo changes -----------------------------------------------------------------------------------------------
+#Modifying waypoints so that it takes the paths generated
+for elem in optimized_routes :
+       waypoints = []
+       for index in elem :
+              debris_coords = [debris[0][index], debris[1][index], debris[2][index]]
+              print(debris_coords)
+              waypoints.append(debris_coords)
+              ani = anim.animate_sequence(waypoints, fig, ax)
+# -------------------------------------------------------------------------------------------------------------
 
 # robot goes back to ss       
 waypoints == [0,0,0]
 # Animate the red point moving sequentially through the waypoints.
-ani = anim.animate_sequence(waypoints, fig, ax)
+#ani = anim.animate_sequence(waypoints, fig, ax)
 
 plt.legend()
 plt.show()
