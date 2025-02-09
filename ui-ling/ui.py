@@ -73,13 +73,31 @@ class RootWindow(ttk.Window):
         self.resizable(False, False)
         self.create_UI()
 
+        self.parameters:dict = {
+            "cargo": 0,
+            "cargoMax": 0,
+            "fuel": 0,
+            "fuelMax": 0,
+            "initial": {
+                "nSpaceStations": 0,
+                "nDebris": 0,
+                "nPayload": 0
+            },
+            "current": {
+                "nSpaceStations": 0,
+                "nDebris": 0,
+                "nPayload": 0
+            }
+        }
+
         centerUIWindows(self)
 
     def create_Figure(self, master):
         self.fig = plt.figure(figsize = (10, 6), dpi = 100) 
 
         # adding the subplot 
-        self.ax = self.fig.subplots(subplot_kw={"projection": "3d"}) 
+        self.ax = self.fig.add_subplot(111, projection='3d')
+        self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
         self.ax.set(xticklabels=[], yticklabels=[], zticklabels=[])
         self.ax.grid(False)
         self.ax.xaxis.pane.fill = False
@@ -107,6 +125,18 @@ class RootWindow(ttk.Window):
     def update_Plot(self):
         self.after(0,self.fig.canvas.draw())
 
+    def __recycle(self):
+        pass
+
+    def __refuel(self):
+        pass
+
+    def __recon(self):
+        pass
+
+    def __random(self):
+        pass
+
     def __regen(self):
         self.after(0, self.ax.clear)
         PAYLOADSIZE = 3
@@ -131,7 +161,7 @@ class RootWindow(ttk.Window):
             label="Space Station")
         self.add_scatter(debris[0], debris[1], debris[2],
             label="Debris")
-        # self.after(0, self.fig.legend())
+        self.after(0, self.fig.legend)
 
     def create_UI(self):
         mainFrame = ttk.Frame(master=self)
@@ -226,10 +256,10 @@ class RootWindow(ttk.Window):
         UI_place_on_Grid(statToolsFrame, statToolsLayout, (5,5))
 
         statButtonLayout = [[
-            ttk.Button(statButtonFrame, text="Recycle"),
-            ttk.Button(statButtonFrame, text="Refuel"),
-            ttk.Button(statButtonFrame, text="Recon"),
-            ttk.Button(statButtonFrame, text="Random")
+            ttk.Button(statButtonFrame, text="Recycle", command=self.__recycle),
+            ttk.Button(statButtonFrame, text="Refuel", command=self.__refuel),
+            ttk.Button(statButtonFrame, text="Recon", command=self.__recon),
+            ttk.Button(statButtonFrame, text="Random", command=self.__random),
         ],[ttk.Button(statButtonFrame, text="Regen", command=self.__regen)]
         ]
 
@@ -261,10 +291,86 @@ class RootWindow(ttk.Window):
         self.create_Figure(graphPlotFrame)
         WIN_Reconfigure(graphPlotFrame)
 
+    def set_MaxCapacity(self, value: int | float):
+        """
+        ### Sets the cargoMax value for the UI and evaluates it in percentage as well before updating the UI
+        """
+        self.parameters["cargoMax"] = value
+        if self.parameters["cargoMax"] >= self.parameters["cargo"]:
+            self.after(0, self.cargoMeter.amountusedvar.set, int(self.parameters["cargo"]/self.parameters["cargoMax"]))
+            self.after(0, self.cargoValue.set, str(int(self.parameters['cargo'])))
+
+    def set_CargoValue(self, value: int | float):
+        """
+        ### Sets the cargo value for the UI and evaluates it in percentage as well before updating the UI
+        """
+        self.parameters["cargo"] = value
+        if self.parameters["cargoMax"] >= self.parameters["cargo"]:
+            self.after(0, self.cargoMeter.amountusedvar.set, int(self.parameters["cargo"]/self.parameters["cargoMax"]))
+            self.after(0, self.cargoValue.set, str(int(self.parameters['cargo'])))
+
+    def set_MaxVolume(self, value: int | float):
+        """
+        ### Sets the fuelMax value for the UI and evaluates it in percentage as well before updating the UI
+        """
+        self.parameters["fuelMax"] = value
+        if self.parameters["fuelMax"] >= self.parameters["fuel"]:
+            self.after(0, self.fuelMeter.amountusedvar.set, int(self.parameters["fuel"]/self.parameters["fuelMax"]))
+            self.after(0, self.fuelValue.set, str(int(self.parameters['fuel'])))
+
+    def set_FuelValue(self, value: int | float):
+        """
+        ### Sets the fuel value for the UI and evaluates it in percentage as well before updating the UI
+        """
+        self.parameters["fuel"] = value
+        if self.parameters["fuelMax"] >= self.parameters["fuel"]:
+            self.after(0, self.fuelMeter.amountusedvar.set, int(self.parameters["fuel"]/self.parameters["fuelMax"]))
+            self.after(0, self.fuelValue.set, str(int(self.parameters['fuel'])))
+
+    def set_NStations(self, value: int):
+        """
+        ### Sets the number of stations
+        """
+        self.parameters["initial"]["nSpaceStations"] = value
+        self.parameters["current"]["nSpaceStations"] = value
+        self.after(0, self.NSpaceStationValue.set, str(value))
+
+    def set_NPayload(self, value: int):
+        """
+        ### Sets the number of payloads
+        """
+        self.parameters["initial"]["nPayloads"] = value
+        self.parameters["current"]["nPayloads"] = value
+        self.after(0, self.NPayloadValue.set, str(value))
+
+    def set_NDebris(self, value: int):
+        """
+        ### Sets the number of debris
+        """
+        self.parameters["initial"]["nDebris"] = value
+        self.parameters["current"]["nDebris"] = value
+        self.after(0, self.NDebrisValue.set, str(value))
+        self.after(0, partial(self.debrisBar.configure, value=100))
+
+    def pop_NDebris(self):
+        """
+        ### Decrease the number of debris
+        """
+        self.parameters["current"]["nDebris"] -= 1
+        self.after(0, self.NDebrisValue.set, str(self.parameters["current"]))
+        self.after(0, partial(self.debrisBar.configure, value=int(self.parameters["current"]["nDebris"]/self.parameters["initial"]["nDebris"])))
+
+    def clear_Log(self):
+        self.after(0, self.logText.set, "")
+    
+    def add_LogEntry(self, value: str):
+        prev = self.logText.get()
+        self.after(0, self.logText.set, prev + "\n" + value)
+
 
 if __name__ == "__main__":
-    root = RootWindow()
     np.random.seed(datetime.now().second)
+    root = RootWindow()
     root.mainloop()
 
     
