@@ -1,0 +1,27 @@
+{
+    "themes": [
+      {
+        "starship": {
+          "type": "dark",
+          "colors": {
+            "primary": "#8a2be2",
+              "secondary": "#708090",
+              "success": "#00b976",
+              "info": "#2291ff",
+              "warning": "#ffa620",
+              "danger": "#da524e",
+              "light": "#ffffff",
+              "dark": "#303030",
+              "bg": "#222222",
+              "fg": "#ffffff",
+              "selectbg": "#454545",
+              "selectfg": "#ffffff",
+              "border": "#060606",
+              "inputfg": "#ffffff",
+              "inputbg": "#191919",
+              "active": "#282828"
+          }
+        }
+      }
+    ]
+}

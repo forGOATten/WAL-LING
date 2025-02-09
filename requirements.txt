@@ -1,1 +1,4 @@
 ttkbootstrap
+numpy
+matplotlib
+skyfield
