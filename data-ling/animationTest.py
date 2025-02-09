@@ -3,17 +3,19 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D  # Required for 3D plotting
 
-def animate_sequence(waypoints, fig, ax, frames_per_segment=20, interval=10):
+def animate_sequence(waypoints, fig, ax, frames_per_segment=25, interval=5):
     """
     Animate a point moving sequentially through a list of waypoints in 3D space,
     while tracking fuel consumption and refueling at the base station (0,0,0).
     """
-    total_segments = len(waypoints) - 1
-    
-    if total_segments < 1:
-        print("Error: Not enough waypoints to animate.")
+    if not waypoints or len(waypoints) < 2:
+        print(f"❌ Error: Not enough waypoints to animate. Received {len(waypoints) if waypoints else 0} waypoints.")
+        print("Waypoints content:", waypoints)
         return None
     
+    print(f"✅ Animation started with {len(waypoints)} waypoints.")
+    
+    total_segments = len(waypoints) - 1
     total_frames = total_segments * frames_per_segment
     
     point, = ax.plot([waypoints[0][0]], [waypoints[0][1]], [waypoints[0][2]], 
@@ -47,7 +49,6 @@ def animate_sequence(waypoints, fig, ax, frames_per_segment=20, interval=10):
             fuel = 100
         
         # Clear the previous text before updating
-        fuel_text.set_text("")
         fuel_text.set_text(f"Fuel: {fuel:.1f}%")
         
         return point, fuel_text
