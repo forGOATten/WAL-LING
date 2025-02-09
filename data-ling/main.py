@@ -3,6 +3,9 @@ from skyfield.api import load, EarthSatellite
 from datetime import datetime, timezone
 import matplotlib.pyplot as plt
 import numpy as np
+import statistics
+import data
+import data2
 
 # data = []
 # with open('TLE_data.json') as file:
@@ -49,7 +52,56 @@ payload = [[a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADS
 debris = [[a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
           [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
           [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)]]
-ss = [0,0,0]
+
+
+#Roberts thingies -----------------------------------------------------------------------------------
+#We are gonna take 4 params :
+"""
+1- debris => [[int, ..., int]]
+2- depot => (0,0,0)
+3- weights => [int, ..., int]
+4- capacity cap => int
+"""
+#Point init
+depot = (0,0,0)
+#Calcul des poids => nb als ...
+weight_debris = [np.random.randint(1, 10) for a in range(len(debris[0]))]
+#capacity_cap = int(statistics.mean(weight_debris))
+capacity_cap = len(debris[0])
+
+optimized_routes = data2.clarke_wright_savings(debris, weight_debris, capacity_cap, payload)
+
+# Vérification de la traversée
+print("Trajets optimisés :")
+for route in optimized_routes:
+       print(route)
+    
+all_debris_indices = set(range(1, len(debris[0])))
+visited_points = set()
+for route in optimized_routes:
+       visited_points.update(route[1:-1])
+missing_points = all_debris_indices - visited_points
+if missing_points:
+       print(f"⚠️ Attention : Les points suivants ne sont pas inclus dans les trajets : {missing_points}")
+else:
+       print("✅ Tous les débris ont été inclus dans les trajets.")
+    
+# Vérification des obstacles
+#data2.verify_obstacle_avoidance(optimized_routes, [depot] + debris, payload)
+
+#Printing station ===================================================================================================
+# print("debrits :")
+# print(debris)
+# print("poids :")
+# print(weight_debris)
+# print(len(weight_debris))
+# print(len(debris[0]))
+# print(capacity_cap)
+#print("routes optimisées :")
+#print(optimized_routes)
+#=======================================================================================================================
+# ---------------------------------------------------------------------------------------------------
+
 
 fig = plt.figure(figsize=(10, 10))
 ax = fig.subplots(subplot_kw={"projection": "3d"})
