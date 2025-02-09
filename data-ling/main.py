@@ -28,7 +28,7 @@ debris = [[a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZ
           [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)]]
 
 for i in range(len(debris)):
-       debris[i].insert(0, depot[i])
+       debris[i].insert(0,depot[i])
 
 #Roberts thingies -----------------------------------------------------------------------------------
 #We are gonna take 4 params :
@@ -61,7 +61,7 @@ else:
        print("✅ Tous les débris ont été inclus dans les trajets.")
     
 # Vérification des obstacles
-#data2.verify_obstacle_avoidance(optimized_routes, [depot] + debris, payload)
+#data.verify_obstacle_avoidance(optimized_routes, [depot] + debris, payload)
 
 #Printing station ===================================================================================================
 # print("debrits :")
