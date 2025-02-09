@@ -6,6 +6,10 @@ from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
+from modules.mainLing import *
+from modules.animateLing import *
+from modules.dataLing import *
+from modules.threadLing import Thread
 
 MAXDEBRIS = 250
 MAXPAYLOADS = 10
@@ -124,10 +128,31 @@ class RootWindow(ttk.Window):
         self.update_Plot()
         
     def update_Plot(self):
-        self.after(0,self.fig.canvas.draw())
+        self.after(0,self.fig.canvas.draw)
 
     def __recycle(self):
-        pass
+        if self.parameters['current']['nDebris'] > 0:
+            optimized_routes = clarke_wright_savings(self.debrisArr, self.weight_debris, self.parameters['cargoMax'], self.payloadArr)
+            path_verification(optimized_routes, self.debrisArr)
+           
+            #     self.add_LogEntry("waypoint")
+            #     self.add_LogEntry(str(len(waypoints)))
+            ani = []
+            for elem in optimized_routes :
+                waypoints = []
+                for index in elem :
+                    debris_coords = [self.debrisArr[0][index], self.debrisArr[1][index], self.debrisArr[2][index]]
+
+                    # On dessine les lignes
+                    if len(waypoints) >= 1:
+                    #     #x, y, z => 0, 1, 2
+                        plt.plot([debris_coords[0], waypoints[-1][0]], [debris_coords[1], waypoints[-1][1]], [[debris_coords[2], waypoints[-1][2]]])
+                    waypoints.append(debris_coords)
+                    an = anim.animate_sequence(waypoints, self.fig, self.ax)
+                    ani.append(an)
+                    self.update_Plot()
+            
+        pass  
 
     def __refuel(self):
         pass
@@ -143,10 +168,11 @@ class RootWindow(ttk.Window):
         self.set_NDebris(np.random.randint(60, MAXDEBRIS)+1)
         self.set_NPayload(np.random.randint(3, MAXPAYLOADS))
         self.set_NStations(1)
+        
 
         self.set_CargoValue(0)
         self.set_FuelValue(100)
-
+        
         self.payloadArr = [
             [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nPayloads"])], 
             [a if np.random.randint(0,2) else -a for a in np.random.rand(self.parameters["initial"]["nPayloads"])], 
@@ -159,6 +185,11 @@ class RootWindow(ttk.Window):
         ]
         for i in range(len(self.debrisArr)):
             self.debrisArr[i].insert(0,0)
+
+        #Calcul des poids => nb als ...
+        self.weight_debris = [np.random.randint(1, 10) for a in range(len(self.debrisArr[0]))]
+        #capacity_cap = int(statistics.mean(weight_debris))
+        self.set_MaxCapacity(len(self.debrisArr[0]))
         
         self.add_scatter(self.payloadArr[0], self.payloadArr[1], self.payloadArr[2], 
             marker="p",
@@ -268,7 +299,7 @@ class RootWindow(ttk.Window):
         UI_place_on_Grid(statToolsFrame, statToolsLayout, (5,5))
 
         statButtonLayout = [[
-            ttk.Button(statButtonFrame, text="Recycle", command=self.__recycle),
+            ttk.Button(statButtonFrame, text="Recycle", command=partial(Thread, "recycle", self.__recycle)),
             ttk.Button(statButtonFrame, text="Refuel", command=self.__refuel),
             ttk.Button(statButtonFrame, text="Recon", command=self.__recon),
             ttk.Button(statButtonFrame, text="Random", command=self.__random),
@@ -364,20 +395,22 @@ class RootWindow(ttk.Window):
         self.after(0, self.NDebrisValue.set, str(value))
         self.after(0, partial(self.debrisBar.configure, value=100))
 
-    def pop_NDebris(self):
+    def pop_NDebris(self, index: int):
         """
         ### Decrease the number of debris
         """
+        # if index < len(self.debrisArr[0]):
         self.parameters["current"]["nDebris"] -= 1
         self.after(0, self.NDebrisValue.set, str(self.parameters["current"]))
         self.after(0, partial(self.debrisBar.configure, value=int(self.parameters["current"]["nDebris"]/self.parameters["initial"]["nDebris"])))
 
     def clear_Log(self):
-        self.after(0, self.logText.set, "")
+        self.after(1, self.logText.set, "")
     
     def add_LogEntry(self, value: str):
         prev = self.logText.get()
-        self.after(0, self.logText.set, prev + "\n" + value)
+        print(value)
+        self.after(1, self.logText.set, prev + "\n" + value)
 
 
 if __name__ == "__main__":
