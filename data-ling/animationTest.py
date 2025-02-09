@@ -1,46 +1,66 @@
-import json
-from skyfield.api import load, EarthSatellite
-from datetime import datetime, timezone
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D  # Required for 3D plotting
 
-PAYLOADSIZE = 3
-DEBRISSIZE = np.random.randint(60,100)
+def animate_point(i, j, fig, ax, frames=100, interval=50):
+    """
+    Animate a point moving linearly from point i to point j in 3D space.
+    (This function is kept for reference.)
+    """
+    i = np.array(i)
+    j = np.array(j)
+    
+    point, = ax.plot([i[0]], [i[1]], [i[2]], marker='o', markersize=10, color="red")
+    
+    def update(frame):
+        t = frame / frames
+        pos = i + t * (j - i)
+        point.set_data([pos[0]], [pos[1]])
+        point.set_3d_properties([pos[2]])
+        return point,
+    
+    ani = FuncAnimation(fig, update, frames=frames+1, interval=interval, blit=False)
+    return ani
 
-payload = [[a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
-           [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
-           [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)]]
-debris = [[a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
-          [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
-          [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)]]
-ss = [0,0,0]
+def animate_sequence(waypoints, fig, ax, frames_per_segment=100, interval=50):
+    """
+    Animate a point moving sequentially through a list of waypoints in 3D space.
+    Each segment between consecutive waypoints is animated over `frames_per_segment` frames.
 
-fig = plt.figure(figsize=(10, 10))
-ax = fig.subplots(subplot_kw={"projection": "3d"})
+    Parameters:
+        waypoints: List of points (each is [x, y, z]).
+        fig: matplotlib Figure object.
+        ax: matplotlib 3D Axes object.
+        frames_per_segment: Number of frames to animate each segment.
+        interval: Delay between frames in milliseconds.
 
-ax.scatter(debris[0], debris[1], debris[2],
-           label="Debris")
-ax.scatter(payload[0], payload[1], payload[2], 
-           marker="p",
-           linewidths=3,
-           label="Payload")
-ax.scatter([0],[0],[0],
-           marker="P",
-           linewidths=10,
-           label="Space Station")
+    Returns:
+        ani: The FuncAnimation object.
+    """
+    # Total number of segments and frames
+    total_segments = len(waypoints) - 1
+    total_frames = total_segments * frames_per_segment
 
-ax.set(xticklabels=[],
-       yticklabels=[],
-       zticklabels=[])
-
-ax.grid(False)
-
-# Remove pane backgrounds
-ax.xaxis.pane.fill = False
-ax.yaxis.pane.fill = False
-ax.zaxis.pane.fill = False
-
-plt.show()
-
-
-
+    # Start the animation at the first waypoint
+    point, = ax.plot([waypoints[0][0]], [waypoints[0][1]], [waypoints[0][2]], 
+                     marker='o', markersize=10, color="red")
+    
+    def update(frame):
+        # Determine which segment we’re animating
+        segment = frame // frames_per_segment
+        if segment >= total_segments:
+            # Ensure the final frame is exactly at the last waypoint
+            pos = np.array(waypoints[-1])
+        else:
+            frame_in_segment = frame % frames_per_segment
+            t = frame_in_segment / frames_per_segment
+            start = np.array(waypoints[segment])
+            end = np.array(waypoints[segment+1])
+            pos = start + t * (end - start)
+        point.set_data([pos[0]], [pos[1]])
+        point.set_3d_properties([pos[2]])
+        return point,
+    
+    ani = FuncAnimation(fig, update, frames=total_frames+1, interval=interval, blit=False)
+    return ani
