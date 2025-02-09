@@ -36,7 +36,8 @@ def check_obstacle_interference(p1, p2, obstacles):
 
 def generate_bypass_point(point, obstacles):
     """Génère un point à proximité pour contourner un obstacle."""
-    offset = np.array([1, -1, 1])
+    # OFFSET => CONTOURNEMENT -------------------------------------------------------------------------
+    offset = np.array([0.0001, -0.0001, 0.0001])
     
     if not isinstance(point, (list, tuple)) or len(point) != 3:
         print(f"❌ Erreur : `point` doit être un triplet (x, y, z) mais a la forme {point}")
