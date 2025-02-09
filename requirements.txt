@@ -1,4 +1,4 @@
 ttkbootstrap
-numpy
 matplotlib
 skyfield
+numpy
