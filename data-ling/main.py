@@ -11,36 +11,22 @@ import animationTest as anim  # Imports the animate_point function
 
 np.random.seed(datetime.now().second)
 PAYLOADSIZE = 3
-DEBRISSIZE = np.random.randint(60, 100)
+DEBRISSIZE = np.random.randint(5, 100)
 
 # Create random payload and debris coordinates
-payload = [
-    [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
-    [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)], 
-    [a if np.random.randint(0,2) else -a for a in np.random.rand(PAYLOADSIZE)]
-]
-debris = [
-    [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
-    [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)], 
-    [a if np.random.randint(0,2) else -a for a in np.random.rand(DEBRISSIZE)]
-]
+payload = np.random.uniform(-1, 1, (3, PAYLOADSIZE))
+debris = np.random.uniform(-1, 1, (3, DEBRISSIZE))
 ss = [0, 0, 0]  # Space station coordinates
 
 # Set up the figure and 3D axis
 fig = plt.figure(figsize=(5, 5))
-ax = fig.subplots(subplot_kw={"projection": "3d"})
+ax = fig.add_subplot(111, projection="3d")
+
 
 # Plot the debris points, payload points, and the space station
-ax.scatter(debris[0], debris[1], debris[2],
-           label="Debris")
-ax.scatter(payload[0], payload[1], payload[2], 
-           marker="p",
-           linewidths=3,
-           label="Payload")
-ax.scatter([0], [0], [0],
-           marker="P",
-           linewidths=10,
-           label="Space Station")
+debris_markers = ax.scatter(debris[0], debris[1], debris[2], label="Debris")
+payload_markers = ax.scatter(payload[0], payload[1], payload[2], marker="p", linewidths=3, label="Payload")
+ss_marker = ax.scatter([0], [0], [0], marker="P", linewidths=10, label="Space Station")
 
 # Remove tick labels and grid; clear background panes for a cleaner look
 ax.set(xticklabels=[], yticklabels=[], zticklabels=[])
@@ -49,14 +35,25 @@ ax.xaxis.pane.fill = False
 ax.yaxis.pane.fill = False
 ax.zaxis.pane.fill = False
 
+# Construct proper waypoints list (moving from the space station to each debris point)
+waypoints = [ss] + [[debris[0][i], debris[1][i], debris[2][i]] for i in range(DEBRISSIZE)]
 
-debris_coords = [[debris[0][i], debris[1][i], debris[2][i]]for i in range(DEBRISSIZE)]
-waypoints = [ss] + debris_coords
+# Debugging: Check waypoint structure
+print("Waypoints:", waypoints)
+print("Waypoints shape:", np.array(waypoints).shape)
 
-# robot goes back to ss       
-waypoints == [0,0,0]
-# Animate the red point moving sequentially through the waypoints.
-ani = anim.animate_sequence(waypoints, fig, ax)
+
+# Animate, making waypoints (debris) transparent only when reached.
+ani = anim.animate_sequence(
+    waypoints=waypoints,
+    fig=fig,
+    ax=ax,
+    frames_per_segment=100,
+    interval=50,
+    debris_coords=[list(d) for d in zip(debris[0], debris[1], debris[2])],  # Proper debris list
+    debris_scatter=debris_markers,
+    collision_threshold=0.02
+)
 
 plt.legend()
 plt.show()
