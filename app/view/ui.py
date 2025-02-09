@@ -74,7 +74,7 @@ def centerUIWindows(window):
 class RootWindow(ttk.Window):
     def __init__(self):
         super().__init__()
-        self.style.load_user_themes("theme.json")
+        self.style.load_user_themes("WAL-LING/theme.json")
         ttk.Style("starship")
         self.title("LINGLING")
         self.resizable(False, False)
@@ -103,7 +103,7 @@ class RootWindow(ttk.Window):
         centerUIWindows(self)
 
     def create_Figure(self, master):
-        self.fig = plt.figure(figsize = (10, 6), dpi = 100) 
+        self.fig = plt.figure(figsize = (7, 5), dpi = 100) 
 
         # adding the subplot 
         self.ax = self.fig.add_subplot(111, projection='3d')
@@ -148,11 +148,9 @@ class RootWindow(ttk.Window):
                     #     #x, y, z => 0, 1, 2
                         plt.plot([debris_coords[0], waypoints[-1][0]], [debris_coords[1], waypoints[-1][1]], [[debris_coords[2], waypoints[-1][2]]])
                     waypoints.append(debris_coords)
-                    an = anim.animate_sequence(waypoints, self.fig, self.ax)
-                    ani.append(an)
-                    self.update_Plot()
-            
-        pass  
+                ani.extend(waypoints)
+            anim.animate_path(ani, self.fig, self.ax)
+            self.update_Plot()
 
     def __refuel(self):
         pass

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D  # Required for 3D plotting
+from matplotlib.figure import Figure
 
 def animate_sequence(waypoints, fig, ax, frames_per_segment=20, interval=10):
     """
@@ -54,3 +55,55 @@ def animate_sequence(waypoints, fig, ax, frames_per_segment=20, interval=10):
     
     ani = FuncAnimation(fig, update, frames=total_frames+1, interval=interval, blit=False)
     return ani
+
+def animate_path(points_list, fig: Figure, ax):
+    #Anime un carré rouge suivant un chemin défini par 'points_list' en 3D.
+
+    # Convertir la liste de listes en numpy array pour faciliter la manipulation
+    points = np.array(points_list, dtype=float)
+
+    # Initialisation du carré rouge
+    square = ax.scatter([], [], [], c='r', s=100)
+
+    # Ligne pour le chemin suivi
+    path_line, = ax.plot([], [], [], 'b-', linewidth=2)  # Bleu pour le chemin
+
+    # Définition des limites de l'espace 3D
+    ax.set_xlim(np.min(points[:, 0]) - 1, np.max(points[:, 0]) + 1)
+    ax.set_ylim(np.min(points[:, 1]) - 1, np.max(points[:, 1]) + 1)
+    ax.set_zlim(np.min(points[:, 2]) - 1, np.max(points[:, 2]) + 1)
+
+    # Liste pour stocker les points déjà visités
+    visited_x, visited_y, visited_z = [], [], []
+
+    # Fonction d'initialisation de l'animation
+    def init():
+        square._offsets3d = ([], [], [])
+        path_line.set_data([], [])
+        path_line.set_3d_properties([])
+        return square, path_line
+
+    # Fonction de mise à jour de l'animation
+    def update(frame):
+        x, y, z = points[frame]
+
+        # Mise à jour de la position du carré
+        square._offsets3d = ([x], [y], [z])
+
+        # Mise à jour du chemin suivi
+        visited_x.append(x)
+        visited_y.append(y)
+        visited_z.append(z)
+        path_line.set_data(visited_x, visited_y)
+        path_line.set_3d_properties(visited_z)
+
+        # Arrêter l'animation quand tous les points sont parcourus
+        if frame == len(points) - 1:
+            ani.event_source.stop()
+
+        return square, path_line
+
+    # Création de l'animation
+    ani = FuncAnimation(fig, update, frames=len(points), init_func=init, blit=False, interval=500)
+
+    plt.show()
